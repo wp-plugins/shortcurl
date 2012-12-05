@@ -1,13 +1,13 @@
 <?php
 /*
-Plugin Name: ELI's cURL Shortcode Parser
+Plugin Name: ELI's SHORTCURL Shortcode to Fetch and Parse External Content
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: This plugin executes wp_remote_get with parameters you pass through a shortcode to display a parsed bit of HTML from another site in your page or post.
-Version: 1.2.12.01
+Version: 1.2.12.05
 */
-$SHORTCURL_Version='1.2.12.01';
+$SHORTCURL_Version='1.2.12.05';
 /**
  * SHORTCURL Main Plugin File
  * @package SHORTCURL
@@ -30,9 +30,15 @@ $SHORTCURL_Version='1.2.12.01';
 */
 function SHORTCURL_admin_notices() {
 	$admin_notices = get_option('SHORTCURL_admin_notices');
+	if (isset($_GET['SHORTCURL_admin_key']) && isset($admin_notices[$_GET['SHORTCURL_admin_key']])) {
+		unset($admin_notices[$_GET['SHORTCURL_admin_key']]);
+		update_option('SHORTCURL_admin_notices', $admin_notices);
+	}
+	$_SERVER_REQUEST_URI = str_replace('&amp;','&', htmlspecialchars( $_SERVER['REQUEST_URI'] , ENT_QUOTES ) );
+	$script_URI = $_SERVER_REQUEST_URI.(strpos($_SERVER_REQUEST_URI,'?')?'&':'?').'ts='.microtime(true);
 	if (is_array($admin_notices))
-		foreach ($admin_notices as $admin_notice)
-			echo "<div class=\"error\">$admin_notice</div>";
+		foreach ($admin_notices as $key=>$admin_notice)
+			echo "<div class=\"error\">$admin_notice <a href='$script_URI&SHORTCURL_admin_key=$key'>[dismiss]</a></div>";
 }
 add_action('admin_notices', 'SHORTCURL_admin_notices');
 if (!headers_sent($filename, $linenum) && !isset($_SESSION)) @session_start();
@@ -50,47 +56,55 @@ function SHORTCURL_set_plugin_row_meta($links_array, $plugin_file) {
 }
 function SHORTCURL_shortcode($attr) {
 	$return = '';
+	$debug = '';
+	$error = '';
 	if (isset($attr['url']) && strlen(trim($attr['url']))) {
 		if (!(isset($attr['timeout']) && is_numeric($attr['timeout'])))
 			$attr['timeout'] = 30;
-		if (isset($_SESSION[$attr['url']]))
-			$return = $_SESSION[$attr['url']];
-		else {
+		if (!isset($_SESSION[$attr['url']]['date'])) {
 			$cache_file = dirname(__FILE__).'/cache/'.md5($attr['url']);
-			if (is_file($cache_file))
-				$return = @file_get_contents($cache_file);
-			else {
-				$return = wp_remote_get($attr['url'], array("timeout" => $attr['timeout']));
-				if (is_wp_error($return))
-					return 'ERROR: '.print_r($return, true);
-				elseif (isset($return['body'])) {
-					$return = $return['body'];
-					if (!is_dir(dirname(__FILE__).'/cache/'))
-						@mkdir(dirname(__FILE__).'/cache/');
-					@file_put_contents($cache_file, $return);
-				}
-			}
-			$_SESSION[$attr['url']] = $return;
+			if (is_file($cache_file) && $_SESSION[$attr['url']]['body'] = @file_get_contents($cache_file))
+				$_SESSION[$attr['url']]['date'] = filemtime($cache_file);
 		}
-		$debug = '';
-		if (isset($attr['start']) && strpos($return, html_entity_decode($attr['start'])))
-			$return = substr($return, strpos($return, html_entity_decode($attr['start'])));
-		elseif (isset($attr['start'])) $debug .= '<li>start=<textarea>'.($attr['start']).'</textarea>';
-		if (isset($attr['stop']) && strpos($return, html_entity_decode($attr['stop'])))
-			$return = substr($return, 0, strpos($return, html_entity_decode($attr['stop'])));
-		elseif (isset($attr['stop'])) $debug .= '<li>stop=<textarea>'.($attr['stop']).'</textarea>';
-		if (isset($attr['end']) && strpos($return, $attr['end']))
-			$return = substr($return, 0, strpos($return, $attr['end']) + strlen($attr['end']));
-		elseif (isset($attr['end'])) $debug .= '<li>end=<textarea>'.($attr['end']).'</textarea>';
-		if (isset($attr['length']) && is_numeric($attr['length']) && strlen($return) > abs($attr['length']))
-			$return = substr($return, 0, $attr['length']);
-		elseif (isset($attr['length'])) $debug .= '<li>length=<textarea>'.($attr['length']).'</textarea>';
-		if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']) && strlen($attr['with']))
-			$return = str_replace($attr['replace'], $attr['with'], $return);
-		if (isset($attr['replace2']) && isset($attr['with2']) && strlen($attr['replace2']) && strlen($attr['with2']))
-			$return = str_replace($attr['replace2'], $attr['with2'], $return);
+		if (isset($_SESSION[$attr['url']]['date']) && $_SESSION[$attr['url']]['date']>(time()-(60*60*24)))
+			$debug .= 'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours ago;\n";
+		elseif ($got = wp_remote_get($attr['url'], (isset($attr['timeout'])?array("timeout" => $attr['timeout']):array()))) {
+			if (is_wp_error($got))
+				$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned ".print_r($got['url'], true)."\n";
+			elseif (isset($got['body']) && strlen($got['body'])) {
+				$_SESSION[$attr['url']]['body'] = $got['body'];
+				$_SESSION[$attr['url']]['date'] = time();
+				@file_put_contents($cache_file, $_SESSION[$attr['url']]['body']);
+			}
+		}
+		if (isset($_SESSION[$attr['url']]['body'])) {
+			$debug .= "SHORTCURL wp_remote_get($attr[url]);\n";
+			$return = $_SESSION[$attr['url']]['body'];
+			if (isset($attr['start']) && strpos($return, html_entity_decode($attr['start'])))
+				$return = substr($return, strpos($return, html_entity_decode($attr['start'])));
+			elseif (isset($attr['start'])) $error .= "SHORTCURL start='".htmlspecialchars($attr['start'])."' but not found in ($attr[url])!\n";
+			if (isset($attr['stop']) && strpos($return, html_entity_decode($attr['stop'])))
+				$return = substr($return, 0, strpos($return, html_entity_decode($attr['stop'])));
+			elseif (isset($attr['stop'])) $error .= "SHORTCURL stop=".htmlspecialchars($attr['stop'])."' but not found in ($attr[url])!\n";
+			if (isset($attr['end']) && strpos($return, $attr['end']))
+				$return = substr($return, 0, strpos($return, $attr['end']) + strlen($attr['end']));
+			elseif (isset($attr['end'])) $error .= "SHORTCURL end=".htmlspecialchars($attr['end'])."' but not found in ($attr[url])!\n";
+			if (isset($attr['length']) && is_numeric($attr['length']) && strlen($return) > abs($attr['length']))
+				$return = substr($return, 0, $attr['length']);
+			elseif (isset($attr['length'])) $error .= "SHORTCURL length=".($attr['length'])." Invalid when content length=".strlen($return)."!\n";
+			if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']) && strlen($attr['with']))
+				$return = str_replace($attr['replace'], $attr['with'], $return);
+			if (isset($attr['replace2']) && isset($attr['with2']) && strlen($attr['replace2']) && strlen($attr['with2']))
+				$return = str_replace($attr['replace2'], $attr['with2'], $return);
+		} else
+			$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned NOTHING!\n";
 	}
-	return (strlen($debug)?$debug.'<textarea>'.$return.'</textarea>':$return);
+	if ($error) {
+		$admin_notices = get_option('SHORTCURL_admin_notices');
+		$admin_notices[md5($error)] = date("m-d H:i: ").$error;
+		update_option('SHORTCURL_admin_notices', $admin_notices);
+	}
+	return "<!-- $debug -->\n$return";
 }
 add_filter('plugin_row_meta', $SHORTCURL_plugin_dir.'_set_plugin_row_meta', 1, 2);
 register_activation_hook(__FILE__,$SHORTCURL_plugin_dir.'_install');
