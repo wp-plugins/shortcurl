@@ -4,10 +4,10 @@ Plugin Name: ELI's SHORTCURL Shortcode to Fetch and Parse External Content
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
-Description: This plugin executes wp_remote_get with parameters you pass through a shortcode to display a parsed bit of HTML from another site in your page or post.
-Version: 1.2.12.05
+Description: Use the shortcode "remote_get" with the parameter "url" to insert the content from that url into your page or post.
+Version: 1.2.12.06
 */
-$SHORTCURL_Version='1.2.12.05';
+$SHORTCURL_Version="1.2.12.06";
 /**
  * SHORTCURL Main Plugin File
  * @package SHORTCURL
@@ -40,18 +40,16 @@ function SHORTCURL_admin_notices() {
 		foreach ($admin_notices as $key=>$admin_notice)
 			echo "<div class=\"error\">$admin_notice <a href='$script_URI&SHORTCURL_admin_key=$key'>[dismiss]</a></div>";
 }
-add_action('admin_notices', 'SHORTCURL_admin_notices');
 if (!headers_sent($filename, $linenum) && !isset($_SESSION)) @session_start();
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 function SHORTCURL_install() {
 	global $wp_version;
-	if (version_compare($wp_version, "2.6", "<"))
-		die("This Plugin requires WordPress version 2.6 or higher");
+	if (version_compare($wp_version, "2.7", "<"))
+		die("This Plugin requires WordPress version 2.7 or higher for wp_remote_get() to work!");
 }
 function SHORTCURL_set_plugin_row_meta($links_array, $plugin_file) {
-	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file))) && strlen($plugin_file) > 10) {
+	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file))) && strlen($plugin_file) > 10)
 		$links_array = array_merge($links_array, array('<a target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ">'.__( 'Donate' ).'</a>'));
-	}
 	return $links_array;
 }
 function SHORTCURL_shortcode($attr) {
@@ -82,16 +80,16 @@ function SHORTCURL_shortcode($attr) {
 			$return = $_SESSION[$attr['url']]['body'];
 			if (isset($attr['start']) && strpos($return, html_entity_decode($attr['start'])))
 				$return = substr($return, strpos($return, html_entity_decode($attr['start'])));
-			elseif (isset($attr['start'])) $error .= "SHORTCURL start='".htmlspecialchars($attr['start'])."' but not found in ($attr[url])!\n";
+			elseif (isset($attr['start'])) $error .= "SHORTCURL start=<b>".htmlspecialchars($attr['start'])."</b> but not found in ($attr[url])!\n";
 			if (isset($attr['stop']) && strpos($return, html_entity_decode($attr['stop'])))
 				$return = substr($return, 0, strpos($return, html_entity_decode($attr['stop'])));
-			elseif (isset($attr['stop'])) $error .= "SHORTCURL stop=".htmlspecialchars($attr['stop'])."' but not found in ($attr[url])!\n";
+			elseif (isset($attr['stop'])) $error .= "SHORTCURL stop=<b>".htmlspecialchars($attr['stop'])."</b> but not found in ($attr[url])!\n";
 			if (isset($attr['end']) && strpos($return, $attr['end']))
 				$return = substr($return, 0, strpos($return, $attr['end']) + strlen($attr['end']));
-			elseif (isset($attr['end'])) $error .= "SHORTCURL end=".htmlspecialchars($attr['end'])."' but not found in ($attr[url])!\n";
+			elseif (isset($attr['end'])) $error .= "SHORTCURL end=<b>".htmlspecialchars($attr['end'])."</b> but not found in ($attr[url])!\n";
 			if (isset($attr['length']) && is_numeric($attr['length']) && strlen($return) > abs($attr['length']))
 				$return = substr($return, 0, $attr['length']);
-			elseif (isset($attr['length'])) $error .= "SHORTCURL length=".($attr['length'])." Invalid when content length=".strlen($return)."!\n";
+			elseif (isset($attr['length'])) $error .= "SHORTCURL length=<b>".($attr['length'])."</b> Invalid when content length=<b>".strlen($return)."</b>!\n";
 			if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']) && strlen($attr['with']))
 				$return = str_replace($attr['replace'], $attr['with'], $return);
 			if (isset($attr['replace2']) && isset($attr['with2']) && strlen($attr['replace2']) && strlen($attr['with2']))
@@ -106,7 +104,8 @@ function SHORTCURL_shortcode($attr) {
 	}
 	return "<!-- $debug -->\n$return";
 }
-add_filter('plugin_row_meta', $SHORTCURL_plugin_dir.'_set_plugin_row_meta', 1, 2);
-register_activation_hook(__FILE__,$SHORTCURL_plugin_dir.'_install');
+add_action("admin_notices", "SHORTCURL_admin_notices");
+add_filter("plugin_row_meta", "SHORTCURL_set_plugin_row_meta", 1, 2);
+register_activation_hook(__FILE__, "SHORTCURL_install");
 add_shortcode("remote_get", "SHORTCURL_shortcode");
 ?>
