@@ -68,7 +68,7 @@ function SHORTCURL_shortcode($attr) {
 			$debug .= 'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours ago;\n";
 		elseif ($got = wp_remote_get($attr['url'], (isset($attr['timeout'])?array("timeout" => $attr['timeout']):array()))) {
 			if (is_wp_error($got))
-				$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned ".print_r($got['url'], true)."\n";
+				$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned ".print_r($got, true)."\n";
 			elseif (isset($got['body']) && strlen($got['body'])) {
 				$_SESSION[$attr['url']]['body'] = $got['body'];
 				$_SESSION[$attr['url']]['date'] = time();
