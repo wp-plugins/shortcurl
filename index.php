@@ -5,9 +5,9 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: Use the shortcode "remote_get" with the parameter "url" to insert the content from that url into your page or post.
-Version: 1.2.12.06
+Version: 1.3.03.15
 */
-$SHORTCURL_Version="1.2.12.06";
+$SHORTCURL_Version="1.3.03.15";
 /**
  * SHORTCURL Main Plugin File
  * @package SHORTCURL
