@@ -1,13 +1,13 @@
 <?php
 /*
-Plugin Name: ELI's SHORTCURL Shortcode to Fetch and Parse External Content
+Plugin Name: ELI's SHORTCURL Shortcodes to Fetch and Parse External Content
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: Use the shortcode "remote_get" with the parameter "url" to insert the content from that url into your page or post.
-Version: 1.3.03.15
+Version: 1.3.03.25
 */
-$SHORTCURL_Version="1.3.03.15";
+$SHORTCURL_Version="1.3.03.25";
 /**
  * SHORTCURL Main Plugin File
  * @package SHORTCURL
@@ -40,7 +40,7 @@ function SHORTCURL_admin_notices() {
 		foreach ($admin_notices as $key=>$admin_notice)
 			echo "<div class=\"error\">$admin_notice <a href='$script_URI&SHORTCURL_admin_key=$key'>[dismiss]</a></div>";
 }
-if (!headers_sent($filename, $linenum) && !isset($_SESSION)) @session_start();
+if (!headers_sent($filename, $linenum) && !session_id()) @session_start();
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 function SHORTCURL_install() {
 	global $wp_version;
@@ -52,20 +52,28 @@ function SHORTCURL_set_plugin_row_meta($links_array, $plugin_file) {
 		$links_array = array_merge($links_array, array('<a target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ">'.__( 'Donate' ).'</a>'));
 	return $links_array;
 }
-function SHORTCURL_shortcode($attr) {
+function SHORTCURL_preg_replace($attr, $content) {
+	$content = do_shortcode($content);
+	if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']))
+		$content = preg_replace($attr['replace'], $attr['with'], $content);
+	return $content;
+}
+function SHORTCURL_remote_get($attr) {
 	$return = '';
 	$debug = '';
 	$error = '';
 	if (isset($attr['url']) && strlen(trim($attr['url']))) {
 		if (!(isset($attr['timeout']) && is_numeric($attr['timeout'])))
-			$attr['timeout'] = 30;
+			$attr['timeout'] = 30; //default remote page to timeout after 30 seconds
+		if (!(isset($attr['expire']) && is_numeric($attr['expire'])))
+			$attr['expire'] = 60*60*24; //default cache to expire in 24 hours
 		if (!isset($_SESSION[$attr['url']]['date'])) {
 			$cache_file = dirname(__FILE__).'/cache/'.md5($attr['url']);
 			if (is_file($cache_file) && $_SESSION[$attr['url']]['body'] = @file_get_contents($cache_file))
 				$_SESSION[$attr['url']]['date'] = filemtime($cache_file);
 		}
-		if (isset($_SESSION[$attr['url']]['date']) && $_SESSION[$attr['url']]['date']>(time()-(60*60*24)))
-			$debug .= 'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours ago;\n";
+		if (isset($_SESSION[$attr['url']]['date']) && $_SESSION[$attr['url']]['date']>(time()-($attr['expire'])))
+			$debug .= 'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".(floor((time()-$_SESSION[$attr['url']]['date'])/60)>59?floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours":floor((time()-$_SESSION[$attr['url']]['date'])/60)." minutes")." ago;\n";
 		elseif ($got = wp_remote_get($attr['url'], (isset($attr['timeout'])?array("timeout" => $attr['timeout']):array()))) {
 			if (is_wp_error($got))
 				$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned ".print_r($got, true)."\n";
@@ -107,5 +115,6 @@ function SHORTCURL_shortcode($attr) {
 add_action("admin_notices", "SHORTCURL_admin_notices");
 add_filter("plugin_row_meta", "SHORTCURL_set_plugin_row_meta", 1, 2);
 register_activation_hook(__FILE__, "SHORTCURL_install");
-add_shortcode("remote_get", "SHORTCURL_shortcode");
+add_shortcode("preg_replace", "SHORTCURL_preg_replace");
+add_shortcode("remote_get", "SHORTCURL_remote_get");
 ?>
