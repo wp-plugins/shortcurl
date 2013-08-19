@@ -1,14 +1,14 @@
-=== ELI's SHORTCURL Shortcode to Fetch and Parse External Content ===
+=== ELI's SHORTCURL Shortcodes to Fetch and Parse External Content ===
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ
-Tags: cURL, shortcode, plugin, wp_remote_get, preg_replace, page, post, parse, HTML
-Stable tag: 1.3.03.25
-Version: 1.3.03.25
+Tags: cURL, shortcode, plugin, wp_remote_get, preg_replace, str_replace, page, post, parse, HTML
+Stable tag: 3.04.26
+Version: 3.04.26
 Requires at least: 2.7
-Tested up to: 3.5.1
+Tested up to: 3.6
 
 Use the shortcodes remote_get and preg_replace to fetch external content and parse it to use on your page or post.
 
@@ -18,7 +18,7 @@ Use the shortcode "remote_get" with the parameter "url" to insert the content fr
 
 Now you can also wrap any content in the "preg_replace" shortcode to manipulate it into the desired format. Tricky stuff, but very powerful, if you know what you're doing.
 
-Updated March-25th
+Updated April-26th
 
 == Installation ==
 
@@ -37,6 +37,11 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 
 == Changelog ==
 
+= 3.04.26 =
+* Added a shortcode for str_replace simple string manipulation.
+* Added support for arrays in preg_replace shortcode.
+* Added an alternate shortcode for running preg_replace on another shortcode vs. on the results of another shortcode.
+
 = 1.3.03.25 =
 * Added a shortcode for preg_replace to further manipulate content.
 
@@ -54,6 +59,9 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 * First versions uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.04.26 =
+Added a shortcode for str_replace, support for arrays in preg_replace, and an alternate shortcode for running preg_replace on another shortcode.
 
 = 1.3.03.25 =
 Added a shortcode for preg_replace to further manipulate content.
