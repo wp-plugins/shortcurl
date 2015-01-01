@@ -1,14 +1,14 @@
-=== ELI's SHORTCURL Shortcodes to Fetch and Parse External Content ===
+=== EZ SHORTCURL Shortcodes to Fetch and Parse External Content ===
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ
 Tags: cURL, shortcode, plugin, wp_remote_get, preg_replace, str_replace, page, post, parse, HTML
-Stable tag: 3.04.26
-Version: 3.04.26
+Stable tag: 3.14.53
+Version: 3.14.53
 Requires at least: 2.7
-Tested up to: 3.6
+Tested up to: 4.1
 
 Use the shortcodes remote_get and preg_replace to fetch external content and parse it to use on your page or post.
 
@@ -18,7 +18,7 @@ Use the shortcode "remote_get" with the parameter "url" to insert the content fr
 
 Now you can also wrap any content in the "preg_replace" shortcode to manipulate it into the desired format. Tricky stuff, but very powerful, if you know what you're doing.
 
-Updated April-26th
+Updated December-31st
 
 == Installation ==
 
@@ -33,9 +33,14 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 
 = What does a example of the shortcode look like? =
 
-[remote_get url="http://wordpress.org/extend/plugins/shortcurl/stats/" start='<div class="block-content"' stop='!-- block-content--' length="-1" replace="='/extend" with="='http://wordpress.org/extend" replace2="%2Fextend%2F" with2="http%3A%2F%2Fwordpress.org%2Fextend%2F"]
+[remote_get url="https://wordpress.org/plugins/shortcurl/stats/" start='&lt;div class="block-content"' stop='!-- block-content--' length="-1" replace="='/extend" with="='http://wordpress.org/extend" replace2="%2Fextend%2F" with2="http%3A%2F%2Fwordpress.org%2Fextend%2F"]
 
 == Changelog ==
+
+= 3.14.53 =
+* Fixed the "with" parameter in to remote_get function to accempt empty string.
+* Decoded HTML Entities in the URL parameter to improve the handling of GET variables in the URL String.
+* Improved the error messages by adding what URL triggered the error.
 
 = 3.04.26 =
 * Added a shortcode for str_replace simple string manipulation.
@@ -59,6 +64,9 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 * First versions uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.14.53 =
+Improved the error messages and fixed the parameters in to remote_get function to improve the handling of GET variables and empty strings.
 
 = 3.04.26 =
 Added a shortcode for str_replace, support for arrays in preg_replace, and an alternate shortcode for running preg_replace on another shortcode.

@@ -1,33 +1,34 @@
 <?php
 /*
-Plugin Name: ELI's SHORTCURL Shortcodes to Fetch and Parse External Content
+Plugin Name: EZ SHORTCURL Shortcodes to Fetch and Parse External Content
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/shortcurl/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: Use the shortcode "remote_get" with the parameter "url" to insert the content from that url into your page or post.
-Version: 3.04.26
+Version: 3.14.53
 */
-$SHORTCURL_Version="3.04.26";
-/**
- * SHORTCURL Main Plugin File
- * @package SHORTCURL
-*/
-/*  Copyright 2012 Eli Scheetz (email: wordpress@ieonly.com)
+$SHORTCURL_Version="3.14.53";
+/*            ___
+ *           /  /\     SHORTCURL Main Plugin File
+ *          /  /:/     @package SHORTCURL
+ *         /__/::\
+ Copyright \__\/\:\__  © 2012-2014 Eli Scheetz (email: wordpress@ieonly.com)
+ *            \  \:\/\
+ *             \__\::/ This program is free software; you can redistribute it
+ *     ___     /__/:/ and/or modify it under the terms of the GNU General Public
+ *    /__/\   _\__\/ License as published by the Free Software Foundation;
+ *    \  \:\ /  /\  either version 2 of the License, or (at your option) any
+ *  ___\  \:\  /:/ later version.
+ * /  /\\  \:\/:/
+  /  /:/ \  \::/ This program is distributed in the hope that it will be useful,
+ /  /:/_  \__\/ but WITHOUT ANY WARRANTY; without even the implied warranty
+/__/:/ /\__    of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+\  \:\/:/ /\  See the GNU General Public License for more details.
+ \  \::/ /:/
+  \  \:\/:/ You should have received a copy of the GNU General Public License
+ * \  \::/ with this program; if not, write to the Free Software Foundation,
+ *  \__\/ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA        */
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
 function SHORTCURL_admin_notices() {
 	$admin_notices = get_option('SHORTCURL_admin_notices');
 	if (isset($_GET['SHORTCURL_admin_key']) && isset($admin_notices[$_GET['SHORTCURL_admin_key']])) {
@@ -80,6 +81,7 @@ add_shortcode("preg_replace_shortcode", "SHORTCURL_preg_replace_shortcode");
 function SHORTCURL_str_replace($attr = array(), $content) {
 	if (isset($attr['replace']) && strlen($attr['replace']) && isset($attr['with']))
 		$content = str_replace($attr['replace'], $attr['with'], $content);
+//		$content = str_replace(html_entity_decode($attr['replace']), html_entity_decode($attr['with']), $content);//maybe this would be better, maybe...
 	return $content;
 }
 add_shortcode("str_replace", "SHORTCURL_str_replace");
@@ -99,8 +101,8 @@ function SHORTCURL_remote_get($attr) {
 				$_SESSION[$attr['url']]['date'] = filemtime($cache_file);
 		}
 		if (isset($_SESSION[$attr['url']]['date']) && $_SESSION[$attr['url']]['date']>(time()-($attr['expire'])))
-			$debug .= 'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".(floor((time()-$_SESSION[$attr['url']]['date'])/60)>59?floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours":floor((time()-$_SESSION[$attr['url']]['date'])/60)." minutes")." ago;\n";
-		elseif ($got = wp_remote_get($attr['url'], (isset($attr['timeout'])?array("timeout" => $attr['timeout']):array()))) {
+			$debug .= html_entity_decode($attr["url"]).'====='.$attr["url"].'SHORTCURL cached('.date("Y-m-d H:i:s", $_SESSION[$attr['url']]['date'])."): ".(floor((time()-$_SESSION[$attr['url']]['date'])/60)>59?floor((time()-$_SESSION[$attr['url']]['date'])/60/60)." hours":floor((time()-$_SESSION[$attr['url']]['date'])/60)." minutes")." ago;\n";
+		elseif ($got = wp_remote_get(html_entity_decode($attr['url']), (isset($attr['timeout'])?array("timeout" => $attr['timeout']):array()))) {
 			if (is_wp_error($got))
 				$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned ".print_r(array("ERROR"=>$got), true)."\n";
 			elseif (isset($got['body']) && strlen($got['body'])) {
@@ -125,16 +127,16 @@ function SHORTCURL_remote_get($attr) {
 			if (isset($attr['length']) && is_numeric($attr['length']) && strlen($return) > abs($attr['length']))
 				$return = substr($return, 0, $attr['length']);
 			elseif (isset($attr['length'])) $error .= "SHORTCURL length=<b>".($attr['length'])."</b> Invalid when content length=<b>".strlen($return)."</b>!\n";
-			if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']) && strlen($attr['with']))
+			if (isset($attr['replace']) && isset($attr['with']) && strlen($attr['replace']))
 				$return = str_replace($attr['replace'], $attr['with'], $return);
-			if (isset($attr['replace2']) && isset($attr['with2']) && strlen($attr['replace2']) && strlen($attr['with2']))
+			if (isset($attr['replace2']) && isset($attr['with2']) && strlen($attr['replace2']))
 				$return = str_replace($attr['replace2'], $attr['with2'], $return);
 		} else
 			$error .= "SHORTCURL ERROR: wp_remote_get($attr[url]) returned NOTHING!\n";
 	}
 	if ($error) {
 		$admin_notices = get_option('SHORTCURL_admin_notices');
-		$admin_notices[md5($error)] = date("m-d H:i: ")."$error<br /><textarea>".htmlspecialchars($_SESSION[$attr["url"]]["body"])."</textarea>";
+		$admin_notices[md5($error)] = date("m-d H:i: ").$_SERVER["REQUEST_URI"]."<li>$error</li><br /><textarea>".htmlspecialchars($_SESSION[$attr["url"]]["body"])."</textarea>";
 		update_option('SHORTCURL_admin_notices', $admin_notices);
 	}
 	return "<!-- $debug -->\n$return";
