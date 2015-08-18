@@ -5,10 +5,10 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ
 Tags: cURL, shortcode, plugin, wp_remote_get, preg_replace, str_replace, page, post, parse, HTML
-Stable tag: 3.14.53
-Version: 3.14.53
+Stable tag: 3.14.34
+Version: 3.14.34
 Requires at least: 2.7
-Tested up to: 4.1
+Tested up to: 4.3
 
 Use the shortcodes remote_get and preg_replace to fetch external content and parse it to use on your page or post.
 
@@ -18,7 +18,7 @@ Use the shortcode "remote_get" with the parameter "url" to insert the content fr
 
 Now you can also wrap any content in the "preg_replace" shortcode to manipulate it into the desired format. Tricky stuff, but very powerful, if you know what you're doing.
 
-Updated December-31st
+Updated August-18th
 
 == Installation ==
 
@@ -36,6 +36,9 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 [remote_get url="https://wordpress.org/plugins/shortcurl/stats/" start='&lt;div class="block-content"' stop='!-- block-content--' length="-1" replace="='/extend" with="='http://wordpress.org/extend" replace2="%2Fextend%2F" with2="http%3A%2F%2Fwordpress.org%2Fextend%2F"]
 
 == Changelog ==
+
+= 3.14.34 =
+* Replaced the SESSION code with the use of GLOBALS for broader compatibilty.
 
 = 3.14.53 =
 * Fixed the "with" parameter in to remote_get function to accempt empty string.
@@ -64,6 +67,9 @@ Use the shorcode remote_get with a url parameter on a page or post to bring in e
 * First versions uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.14.34 =
+Replaced the SESSION code with the use of GLOBALS for broader compatibility.
 
 = 3.14.53 =
 Improved the error messages and fixed the parameters in to remote_get function to improve the handling of GET variables and empty strings.
